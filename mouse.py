@@ -1,4 +1,3 @@
-import py_compile
 from tkinter import *
 import cv2 as cv
 import mediapipe as mp
