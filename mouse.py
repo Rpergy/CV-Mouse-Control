@@ -3,7 +3,7 @@ import cv2 as cv
 import mediapipe as mp
 from enum import Enum
 import numpy as np
-import multiprocessing
+
 import pyautogui 
 
 class Indecies(Enum):
@@ -52,56 +52,48 @@ thumbY = 0
 pyautogui.FAILSAFE = False
 
 def moveMouse():
-    while True:
-        middleClickDist = np.sqrt(np.power(thumbX - middleX, 2) + np.power(thumbY - middleY, 2))
-        ringClickDist = np.sqrt(np.power(thumbX - ringX, 2) + np.power(thumbY - ringY, 2))
+    middleClickDist = np.sqrt(np.power(thumbX - middleX, 2) + np.power(thumbY - middleY, 2))
+    ringClickDist = np.sqrt(np.power(thumbX - ringX, 2) + np.power(thumbY - ringY, 2))
 
-        print(middleClickDist)
+    print(middleClickDist)
 
-        if middleClickDist < 50:
-            print("Click")
-            pyautogui.click()
+    if middleClickDist < 50:
+        print("Click")
+        pyautogui.click()
 
 
-        if ringClickDist < 50:
-            print("Click")
-            pyautogui.click(button="right")
+    if ringClickDist < 50:
+        print("Click")
+        pyautogui.click(button="right")
 
-        pyautogui.moveTo(mouseX, mouseY)
+    pyautogui.moveTo(mouseX, mouseY)
 
 def processFrame():
-    while True:
-        success, frame = video.read()
-        frame = cv.flip(frame, 1)
+    success, frame = video.read()
+    frame = cv.flip(frame, 1)
 
-        RGBframe = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+    RGBframe = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+    
+    results = hands.process(RGBframe)
 
-        results = hands.process(RGBframe)
+    global mouseX, mouseY, middleX, middleY, thumbX, thumbY, ringX, ringY
 
-        global mouseX, mouseY, middleX, middleY, thumbX, thumbY, ringX, ringY
+    if results.multi_hand_landmarks:
+        for handLandmarks in results.multi_hand_landmarks:
+            for id, lm in enumerate(handLandmarks.landmark):
+                if id == Indecies.INDEX_TIP.value: 
+                    mouseX = lm.x * 1920
+                    mouseY = lm.y * 1080
+                elif id == Indecies.MIDDLE_TIP.value:
+                    middleX = lm.x * 1920
+                    middleY = lm.y * 1080
+                elif id == Indecies.THUMB_TIP.value:
+                    thumbX = lm.x * 1920
+                    thumbY = lm.y * 1080
+                elif id == Indecies.RING_TIP.value:
+                    ringX = lm.x * 1920
+                    ringY = lm.y * 1080
 
-        if results.multi_hand_landmarks:
-            for handLandmarks in results.multi_hand_landmarks:
-                for id, lm in enumerate(handLandmarks.landmark):
-                    if id == Indecies.INDEX_TIP.value: 
-                        mouseX = lm.x * 1920
-                        mouseY = lm.y * 1080
-                    elif id == Indecies.MIDDLE_TIP.value:
-                        middleX = lm.x * 1920
-                        middleY = lm.y * 1080
-                    elif id == Indecies.THUMB_TIP.value:
-                        thumbX = lm.x * 1920
-                        thumbY = lm.y * 1080
-                    elif id == Indecies.RING_TIP.value:
-                        ringX = lm.x * 1920
-                        ringY = lm.y * 1080
-
-if __name__ == '__main__':
-    frameProcess = multiprocessing.Process(target=processFrame)
-    mouseProcess = multiprocessing.Process(target=moveMouse)
-
-    frameProcess.start()
-    mouseProcess.start()
-
-    frameProcess.join()
-    mouseProcess.join()
+while True:
+    processFrame()
+    moveMouse()
