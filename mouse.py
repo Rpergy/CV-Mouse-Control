@@ -1,3 +1,4 @@
+import py_compile
 from tkinter import *
 import cv2 as cv
 import mediapipe as mp
@@ -31,6 +32,9 @@ class Indecies(Enum):
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(max_num_hands = 1)
 
+xResolution = pyautogui.size()[0]
+yResolution = pyautogui.size()[1]
+
 detectionRadius = 50
 
 mouseX = 100
@@ -55,6 +59,8 @@ def moveMouse():
     ringClickDist = np.sqrt(np.power(thumbX - ringX, 2) + np.power(thumbY - ringY, 2))
 
     detectionRadius = 50 * (np.abs(indexmcp - pinkymcp) * 10)
+
+    print(detectionRadius)
 
     if middleClickDist < detectionRadius:
         print("Click")
@@ -83,29 +89,28 @@ def processFrame():
         for handLandmarks in results.multi_hand_landmarks:
             for id, lm in enumerate(handLandmarks.landmark):
                 if id == Indecies.INDEX_TIP.value: 
-                    mouseX = lm.x * 1920
-                    mouseY = lm.y * 1080
+                    mouseX = lm.x * xResolution
+                    mouseY = lm.y * yResolution
                 elif id == Indecies.MIDDLE_TIP.value:
-                    middleX = lm.x * 1920
-                    middleY = lm.y * 1080
+                    middleX = lm.x * xResolution
+                    middleY = lm.y * yResolution
                 elif id == Indecies.THUMB_TIP.value:
-                    thumbX = lm.x * 1920
-                    thumbY = lm.y * 1080
+                    thumbX = lm.x * xResolution
+                    thumbY = lm.y * yResolution
                 elif id == Indecies.RING_TIP.value:
-                    ringX = lm.x * 1920
-                    ringY = lm.y * 1080
+                    ringX = lm.x * xResolution
+                    ringY = lm.y * yResolution
                 elif id == Indecies.PINKY_MCP.value:
                     pinkymcp = lm.x
                 elif id == Indecies.INDEX_MCP.value:
                     indexmcp = lm.x
 
 
-# Create an instance of TKinter Window or frame
+
 win = Tk()
-# Set the size of the window
 win.geometry("200x100")
 win.title = "Hand Mouse Control"
-# Create a Label to capture the Video frames
+
 label = Label(win)
 label.grid(row=0, column=0)
 
