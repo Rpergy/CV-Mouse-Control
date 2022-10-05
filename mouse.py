@@ -1,9 +1,8 @@
-from concurrent.futures import process
+from tkinter import *
 import cv2 as cv
 import mediapipe as mp
 from enum import Enum
 import numpy as np
-
 import pyautogui 
 
 class Indecies(Enum):
@@ -29,11 +28,8 @@ class Indecies(Enum):
     PINKY_DIP = 19
     PINKY_TIP = 20
 
-video = cv.VideoCapture(0)
-
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(max_num_hands = 1)
-mpDraw = mp.solutions.drawing_utils
 
 detectionRadius = 50
 
@@ -49,20 +45,23 @@ ringY = 0
 thumbX = 0
 thumbY = 0
 
+pinkymcp = 0
+indexmcp = 0
+
 pyautogui.FAILSAFE = False
 
 def moveMouse():
     middleClickDist = np.sqrt(np.power(thumbX - middleX, 2) + np.power(thumbY - middleY, 2))
     ringClickDist = np.sqrt(np.power(thumbX - ringX, 2) + np.power(thumbY - ringY, 2))
 
-    print(middleClickDist)
+    detectionRadius = 50 * (np.abs(indexmcp - pinkymcp) * 10)
 
-    if middleClickDist < 50:
+    if middleClickDist < detectionRadius:
         print("Click")
         pyautogui.click()
 
 
-    if ringClickDist < 50:
+    if ringClickDist < detectionRadius:
         print("Click")
         pyautogui.click(button="right")
 
@@ -72,11 +71,13 @@ def processFrame():
     success, frame = video.read()
     frame = cv.flip(frame, 1)
 
+    frame.flags.writeable = False
+
     RGBframe = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
     
     results = hands.process(RGBframe)
 
-    global mouseX, mouseY, middleX, middleY, thumbX, thumbY, ringX, ringY
+    global mouseX, mouseY, middleX, middleY, thumbX, thumbY, ringX, ringY, pinkymcp, indexmcp
 
     if results.multi_hand_landmarks:
         for handLandmarks in results.multi_hand_landmarks:
@@ -93,7 +94,28 @@ def processFrame():
                 elif id == Indecies.RING_TIP.value:
                     ringX = lm.x * 1920
                     ringY = lm.y * 1080
+                elif id == Indecies.PINKY_MCP.value:
+                    pinkymcp = lm.x
+                elif id == Indecies.INDEX_MCP.value:
+                    indexmcp = lm.x
 
-while True:
+
+# Create an instance of TKinter Window or frame
+win = Tk()
+# Set the size of the window
+win.geometry("200x100")
+win.title = "Hand Mouse Control"
+# Create a Label to capture the Video frames
+label = Label(win)
+label.grid(row=0, column=0)
+
+video = cv.VideoCapture(0)
+
+def show_frames():
     processFrame()
     moveMouse()
+    
+    label.after(1, show_frames)
+
+show_frames()
+win.mainloop()
