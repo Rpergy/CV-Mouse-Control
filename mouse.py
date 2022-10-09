@@ -1,9 +1,9 @@
-from tkinter import *
 import cv2 as cv
 import mediapipe as mp
 from enum import Enum
 import numpy as np
 import pyautogui 
+import threading
 
 class Indecies(Enum):
     WRIST = 0
@@ -104,22 +104,15 @@ def processFrame():
                 elif id == Indecies.INDEX_MCP.value:
                     indexmcp = lm.x
 
-
-
-win = Tk()
-win.geometry("200x100")
-win.title = "Hand Mouse Control"
-
-label = Label(win)
-label.grid(row=0, column=0)
-
 video = cv.VideoCapture(0)
 
-def show_frames():
-    processFrame()
-    moveMouse()
+if __name__ == "__main__":
+    while True:
+        frameProcess = threading.Thread(target = processFrame)
+        mouseProcess = threading.Thread(target = moveMouse)
     
-    label.after(1, show_frames)
-
-show_frames()
-win.mainloop()
+        frameProcess.start()
+        mouseProcess.start()
+    
+        frameProcess.join()
+        mouseProcess.join()
